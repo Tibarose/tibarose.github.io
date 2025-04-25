@@ -33,7 +33,7 @@ try {
         storageBucket: "gardeniatodaynew.firebasestorage.app",
         messagingSenderId: "805080687276",
         appId: "1:805080687276:web:8cfa2db1884f916b1ff509",
-        measurementId: "G-0KWN75E378"
+        measurementId: "G-6V2JS7ZN1F"
     });
     console.log('[Service Worker] Firebase initialized successfully');
 } catch (error) {
@@ -47,22 +47,31 @@ try {
     console.log('[Service Worker] Firebase Messaging initialized');
 
     messaging.onBackgroundMessage(function(payload) {
-        console.log('[Push] Background message received:', payload);
-        const { title, body } = payload.notification || {};
-        if (title && body) {
-            console.log('[Push] Showing notification:', title, body);
-            self.registration.showNotification(title, {
-                body: body,
-                icon: "https://tibarose.github.io/Gardeniamarket/icons/Icon-192.png"
-            });
-        } else {
-            console.error('[Push] Invalid notification payload:', payload);
-        }
+        console.log('[Service Worker] Background message received:', JSON.stringify(payload));
+        const notification = payload.notification || {};
+        const notificationTitle = notification.title || 'Default Title';
+        const notificationOptions = {
+            body: notification.body || 'Default Body',
+            icon: "https://tibarose.github.io/Gardeniamarket/icons/Icon-192.png",
+            data: payload.data || {}
+        };
+        console.log('[Service Worker] Showing notification:', notificationTitle, notificationOptions.body);
+        return self.registration.showNotification(notificationTitle, notificationOptions);
     });
 } catch (error) {
     console.error('[Service Worker] Error setting up Firebase Messaging:', error);
     throw error;
 }
+
+// Handle notification clicks
+self.addEventListener('notificationclick', (event) => {
+    console.log('[Service Worker] Notification clicked:', event.notification);
+    event.notification.close();
+    const url = event.notification.data.url || 'https://tibarose.github.io/Gardeniamarket/';
+    event.waitUntil(
+        clients.openWindow(url)
+    );
+});
 
 // Service Worker lifecycle events
 self.addEventListener('install', (event) => {
